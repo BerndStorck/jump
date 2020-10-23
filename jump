@@ -12,7 +12,7 @@
 # Data for progams self description:
 PROGNAME="jump"
 SCRIPTNAME="${0##*/}"
-VERSION="1.0.0"
+VERSION="1.0.1"
 
 if [ "$1" = '--help' ] || [ "$1" = '-h' ]; then
     echo "
@@ -30,10 +30,12 @@ if [ "$1" = '--help' ] || [ "$1" = '-h' ]; then
    $SCRIPTNAME +<line_number> <<editor> file>
    $SCRIPTNAME <editor> <file> +<line_number>
 
- Currently supported editors:
+ Currently supported editors and viewers:
 
-   vi, nano, leafpad, pluma, sublime, jupp, joe,
-   kate, scite, mcedit, vis, ne
+   vim, nano, leafpad, pluma, sublime, jupp, joe,
+   jstar, jpico, jmacs, kate, scite, mcedit, xed,
+   cream, vis, ne; less, more, most
+
 "
 exit 0
 fi
@@ -50,7 +52,7 @@ done
 
 function set_edit_command {
 	case "$1" in
-        jupp | joe | vi | vis | pluma | mcedit | nano | ne)
+        jupp|joe|vi|vim|cream|vis|pluma|mcedit|nano|less|more|most|xed|ne|jstar|jpico|jmacs)
             edit_command="+$start $file";;
         leafpad)
             edit_command="--jump=$start $file";;

@@ -1,0 +1,95 @@
+#! /bin/bash
+#
+# jump, 2020-10-23
+#
+# Opens a text file with a given text editor and jumps right
+# to a specific line.
+#
+# Author:  Bernd Storck
+# Contact: https://www.facebook.com/BStLinux/
+#
+
+# Data for progams self description:
+PROGNAME="jump"
+SCRIPTNAME="${0##*/}"
+VERSION="1.0.0"
+
+if [ "$1" = '--help' ] || [ "$1" = '-h' ]; then
+    echo "
+ $PROGNAME ($VERSION)
+
+ Opens a file jumping right to a specific line. $PROGNAME
+ works as wrapper for various text editors and unifies the
+ command to open a text file at a specific line.
+
+ SYNOPSIS: $SCRIPTNAME <editor> +<line_number> <file>
+
+ The option for the line number can also be given as first
+ or last parameter:
+
+   $SCRIPTNAME +<line_number> <<editor> file>
+   $SCRIPTNAME <editor> <file> +<line_number>
+
+ Currently supported editors:
+
+   vi, nano, leafpad, pluma, sublime, jupp, joe,
+   kate, scite, mcedit, vis, ne
+"
+exit 0
+fi
+
+editor=; file=; start=
+for i in $@; do
+    if [ "${i:0:1}" != '+' ]; then
+        [ -z "$editor" ] && editor="$i" && continue
+        [ -z "$file" ]   && file="$i"   && continue
+    else
+        start="${i:1}"
+    fi
+done
+
+function set_edit_command {
+	case "$1" in
+        jupp | joe | vi | vis | pluma | mcedit | nano | ne)
+            edit_command="+$start $file";;
+        leafpad)
+            edit_command="--jump=$start $file";;
+        scite)
+            edit_command="$file -goto:$start";;
+        sublime|sublime-edit)
+            edit_command="${file}:${start}";;
+        kate)
+            edit_command="--line $start $file";;
+        medit)
+            edit_command="--line=$start $file";;
+    esac
+    edit_command="$editor $edit_command"
+}
+
+function select_editor { # Selects the editor program to use.
+    if [ -n "$1" ]; then
+        editor="$1"
+    fi
+    if [ ! "$(which "$editor")" ]; then
+        if [ -n "$EDITOR" ] && [ "$(which "$EDITOR")" ]; then
+            editor="$(basename $EDITOR)"
+        else
+            for i in jupp joe vi vis pluma mcedit nano ne; do
+                if [ "$(which ${i})" ]; then
+                    editor="$i"
+                     break
+                fi
+            done
+            if [ -n "$editor" ]; then
+                echo "FEHLER: Texteditor nicht gefunden."
+                exit 1
+            fi
+        fi
+    fi
+    set_edit_command "$editor"
+}
+
+select_editor "$editor"
+eval "$edit_command"  ## Starts editor.
+
+exit 0

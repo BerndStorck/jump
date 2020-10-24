@@ -1,5 +1,5 @@
 
-# jump (1.2.0)
+# jump (1.2.3)
 
 ## Leistung
 
@@ -46,5 +46,5 @@ scite, sublime, vim, vis, xed
 
 Unabhängig von den Aliasdefinitionen des Linux-Systems erkennt das Programm eine Reihe Aliase, Kürzel, die es intern in einen gültigen Programmnamen übersetzt. Diese Aliase sind in einer gesonderten Datei namens `.jump_aliases` definiert, die Home-Verzeichnis des aktuellen Anwenders gesucht wird. Darin kann man Aliase nach seinem eigenen Geschmack definieren. Die aktuell gültigen Aliase werden angezeigt, wenn man das Kommando `jump -aliases` gibt.   
 
-sublime-text kann auch als sublime aufgerufen werden, wenn nur im System ein Alias oder ein symbolischer Link angelegt wurde, der auf sublime-text verweist. 
+sublime_text kann auch als sublime aufgerufen werden, wenn nur im System ein Alias oder ein symbolischer Link angelegt wurde, der auf sublime_text verweist. 
 

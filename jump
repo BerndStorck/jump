@@ -12,21 +12,13 @@
 # Data for program self description:
 PROGNAME="jump"
 SCRIPTNAME="${0##*/}"
-VERSION="1.2.1"
+VERSION="1.2.3"
 SUPPORTED="   cream, emacs, geany, gedit, gvim, jed, jmacs, joe, jpico
-   jstar, jupp, kak (kakoune), kate, kwrite, leafpad, less
+   jstar, jupp, kak (kakoune), kate, kwrite, leafpad,
    less, mcedit, medit, more, most, nano, ne, nvim, pico,
-   pluma, scite, sublime, vim, vis, xed"
+   pluma, scite, sublime_text, vim, vis, xed"
 
-## Define aliases array:
-declare -A prog_alias
-OLDIFS="$IFS"
-IFS=','
-while read idx value; do
-	prog_alias[$idx]="$value"
-done < "$HOME/.jump_aliases"
-IFS="$OLDIFS"
-
+# Different strings for German system language and otherwise used English:
 if [ "${LANG::2}" == "de" ]; then  # sets a flag variable for the user interface language.
     UILANG="Deutsch"
     ERR_NO_EDITOR="FEHLER: Texteditor nicht gefunden."
@@ -38,6 +30,28 @@ else
     ERR_NOT_SUPPORTED="ERROR: A not supported program was called.\nDefault editor will be started now."
     TITLE_SUPPORTED="SUPPORTED PROGRAMS:"
 fi
+
+# Define array of internal program name aliases:
+declare -A prog_alias
+OLDIFS="$IFS"
+IFS=','
+while read value idx; do
+	prog_alias[$idx]="$value"
+done < "$HOME/.jump_aliases"
+IFS="$OLDIFS"
+
+## Reading command line parameters:
+editor=; file=; start=
+for i in $@; do
+    if [ "${i:0:1}" != '+' ]; then
+        if [ "$#" -gt 2 ]; then  ## Maybe $editor will later be set automatically.
+            [ -z "$editor" ] && editor="$i" && continue
+        fi
+        [ -z "$file" ]   && file="$i"   && continue
+    else
+        start="${i:1}"
+    fi
+done
 
 
 function hilfe_seite {
@@ -112,19 +126,6 @@ $SUPPORTED
 " | more
 }
 
-## Reading command line parameters:
-editor=; file=; start=
-for i in $@; do
-    if [ "${i:0:1}" != '+' ]; then
-        if [ "$#" -gt 2 ]; then  ## Maybe $editor will later be set automatically.
-            [ -z "$editor" ] && editor="$i" && continue
-        fi
-        [ -z "$file" ]   && file="$i"   && continue
-    else
-        start="${i:1}"
-    fi
-done
-
 function set_edit_command {
     case "$1" in
         jupp|joe|vi|vim|cream|vis|gvim|pluma|gedit|mcedit|emacs|nano|pico|less|more|most|jed|xed|ne|kak|kakoune|geany|jstar|jpico|jmacs)
@@ -133,12 +134,12 @@ function set_edit_command {
             edit_command="--jump=$start $file";;
         scite)
             edit_command="$file -goto:$start";;
-        sublime|sublime-edit)
+        sublime|sublime_text)
             edit_command="${file}:${start}";;
         kate|kwrite|medit)
             edit_command="--line $start $file";;
-        medit)
-            edit_command="--line=$start $file";;
+#        medit)
+#            edit_command="--line=$start $file";;
     esac
     edit_command="$editor $edit_command"
 }
@@ -150,15 +151,19 @@ function select_editor { # Selects the editor program to use.
     if [ -n "${prog_alias[$editor]}" ]; then
         editor="${prog_alias[$editor]}"  ## Translates aliases to the correct program name.
     fi
-    if ! grep -Fw "$editor" <<< "$SUPPORTED" &> /dev/null; then
+    if ! grep  -E "$editor" <<< "$SUPPORTED" &> /dev/null; then
+        # echo "Enters not supported"
         editor=
         echo -e "$ERR_NOT_SUPPORTED" > /dev/stderr
         sleep 4
     fi
-    if [ ! "$(which "$editor")" ]; then
+    if [ ! "$(which "$editor")" ] && [ ! "$(command -v "$editor")" ]; then
+        # echo "\$editor (=$editor) nicht gefunden"
         if [ -n "$EDITOR" ] && [ "$(which "$EDITOR")" ]; then
+            # echo "EDITOR wird gelesen"
             editor="$(basename "$EDITOR")"
         else  ## Automatically selects the editor or viewer:
+            # echo "Enters automatic editor selection"
             for i in jupp joe vi vis cream gvim pluma mcedit nano pico ne xed gedit emacs geany less more most; do
                 if [ "$(which ${i})" ]; then
                     editor="$i"

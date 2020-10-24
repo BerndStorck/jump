@@ -1,5 +1,5 @@
 
-# jump (1.0.0)
+# jump (1.2.0)
 
 ## Purpose
 
@@ -14,19 +14,23 @@ The option for the line number can also be given as first or last parameter:
 
 `jump <editor> <file> +<line_number>`
 
-## Currently supported editors
+## Currently supported editors and viewers
 - vi, vim
 - nano
 - leafpad
 - pluma
-- sublime
-- jupp, joe
+- sublime-text 
+- jupp, joe, jstar, jpico, jmacs
 - kate
 - scite
 - mcedit
+- cream
 - vis
 - ne
-
+- xed
+- less
+- more
+- most
 ### Aliases and symblolic links
 
 Sublime editor exists as sublime-text, but if you have defined an alias or a symbolic link to sublime-text as "sublime", the script will recognize it as the call for the Sublime editor.

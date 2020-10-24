@@ -1,9 +1,9 @@
 
-# jump (1.0.0)
+# jump (1.2.0)
 
 ## Leistung
 
-Öffnet eine Textdatei und springt direkt zu eine bestimmten Zeile. jump ist ein Wrapper-Programm, das den dafür notwendigen Aufruf für diverse Texteditoren vereinheitlicht.
+Öffnet eine Textdatei und springt direkt zu eine bestimmten Zeile. jump ist ein Wrapper-Programm, das den dafür notwendigen Aufruf für diverse Texteditoren und Text-Viewer vereinheitlicht.
 
 ## Aufrufsyntax
 `jump <editor> +<line_number> <file>`
@@ -18,18 +18,23 @@ Die Option mit der Zeilennummer kann ebenso gut als erster oder letzter Prameter
 
 `jump leafpad +220 meinscript.sh`
 
-## Unterstützte Texteditoren
+## Unterstützte Texteditoren und Text-Viewer
 - vi, vim
 - nano
 - leafpad
 - pluma
 - sublime-text 
-- jupp, joe
+- jupp, joe, jstar, jpico, jmacs
 - kate
 - scite
 - mcedit
+- cream
 - vis
 - ne
+- xed
+- less
+- more
+- most
 
 ### Aliase
 

@@ -1,5 +1,5 @@
 
-# jump (1.2.0)
+# jump (1.1.0)
 
 ## Leistung
 

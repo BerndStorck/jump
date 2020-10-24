@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# jump, 2020-10-23
+# jump, 2020-10-23, 2020-10-24
 #
 # Opens a text file with a given text editor and jumps right
 # to a specific line.
@@ -12,9 +12,45 @@
 # Data for progams self description:
 PROGNAME="jump"
 SCRIPTNAME="${0##*/}"
-VERSION="1.0.1"
+VERSION="1.1.0"
 
-if [ "$1" = '--help' ] || [ "$1" = '-h' ]; then
+if [ "${LANG::2}" == "de" ]; then  # sets a flag variable for the user interface language.
+    UILANG="Deutsch"
+else
+    UILANG="English"
+fi
+
+
+function hilfe_seite {
+    echo "
+ $PROGNAME ($VERSION)
+
+ Öffnet eine Textdatei und springt darin unmittelbar zu der
+ vom Anwender angegebenen Zeile. $PROGNAME ist ein
+ Wrapper-Programm für eien Reihe von Texteditoren und
+ Text-Viewern, es vereinheitlicht das Kommando um mit
+ diesen Programmen eine Textdatei mit dem Sprung zu einer
+ bestimmten Zeile zu öffnen.
+
+ AUFRUF: $SCRIPTNAME <Editor> +<Zeilennummer> <Datei>
+
+ Die Option mit der anzuspringenden Zeilennumer kann auch
+ als erster oder letzter der drei Paramter geschreiben
+ werden:
+
+   $SCRIPTNAME +<line_number> <<editor> file>
+   $SCRIPTNAME <editor> <file> +<line_number>
+
+ Zurzeit unterstützte Editoren und Textviewer:
+
+   vim, nano, leafpad, pluma, sublime, jupp, joe,
+   jstar, jpico, jmacs, kate, scite, mcedit, xed,
+   cream, vis, ne; less, more, most
+
+"
+}
+
+function help_page {
     echo "
  $PROGNAME ($VERSION)
 
@@ -37,14 +73,15 @@ if [ "$1" = '--help' ] || [ "$1" = '-h' ]; then
    cream, vis, ne; less, more, most
 
 "
-exit 0
-fi
+}
 
 editor=; file=; start=
 for i in $@; do
     if [ "${i:0:1}" != '+' ]; then
-        [ -z "$editor" ] && editor="$i" && continue
-        [ -z "$file" ]   && file="$i"   && continue
+        if [ "$#" -gt 2 ]; then
+			[ -z "$editor" ] && editor="$i" && continue
+        fi
+		[ -z "$file" ]   && file="$i"   && continue
     else
         start="${i:1}"
     fi
@@ -76,7 +113,7 @@ function select_editor { # Selects the editor program to use.
         if [ -n "$EDITOR" ] && [ "$(which "$EDITOR")" ]; then
             editor="$(basename $EDITOR)"
         else
-            for i in jupp joe vi vis pluma mcedit nano ne; do
+            for i in jupp joe vi vis cream pluma mcedit nano ne xed less more most; do
                 if [ "$(which ${i})" ]; then
                     editor="$i"
                      break
@@ -90,6 +127,30 @@ function select_editor { # Selects the editor program to use.
     fi
     set_edit_command "$editor"
 }
+
+
+### main ######################
+case "$1" in
+    --hilf|--hilfe|-hilf)  # Calls German help regardless of system settings for language.
+        hilfe_seite
+        exit 0
+        ;;
+    --help|-h|-help)
+        if [ "$UILANG" == "Deutsch" ]; then
+            hilfe_seite
+        else
+            help_page
+        fi
+        exit 0
+        ;;
+    --version|-\#)   # For possible bug reports.
+        if [ "$1" = "--version" ]; then
+            echo -n "$PROGNAME "
+        fi
+        echo "$VERSION"
+        exit 0
+        ;;
+esac
 
 select_editor "$editor"
 eval "$edit_command"  ## Starts editor.

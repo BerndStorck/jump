@@ -2,22 +2,41 @@
 #
 # jump, 2020-10-23, 2020-10-24
 #
-# Opens a text file with a given text editor and jumps right
+# Opens a text file with a given text editor or viewer and jumps right
 # to a specific line.
 #
 # Author:  Bernd Storck
 # Contact: https://www.facebook.com/BStLinux/
 #
 
-# Data for progams self description:
+# Data for program self description:
 PROGNAME="jump"
 SCRIPTNAME="${0##*/}"
-VERSION="1.1.0"
+VERSION="1.2.0"
+SUPPORTED="    cream, emacs, geany, gedit, gvim, jed, jmacs, joe, jpico
+    jstar, jupp, kak (kakoune), kate, kwrite, leafpad, less
+    less, mcedit, medit, more, most, nano, ne, nvim, pico, pluma,
+    scite, sublime, vim, vis, xed"
+
+## Define aliases array:
+declare -A prog_alias
+OLDIFS="$IFS"
+IFS=','
+while read idx value; do
+	prog_alias[$idx]="$value"
+done < "$HOME/.jump_aliases"
+IFS="$OLDIFS"
 
 if [ "${LANG::2}" == "de" ]; then  # sets a flag variable for the user interface language.
     UILANG="Deutsch"
+    ERR_NO_EDITOR="FEHLER: Texteditor nicht gefunden."
+    ERR_NOT_SUPPORTED="FEHLER: Ein nicht unterstütztes Programm wurde aufgerufen.\nDer Standardeditor wird jetzt stattdessen gestartet."
+    TITLE_SUPPORTED="UNTERSTÜTZTE PROGRAMME:"
 else
     UILANG="English"
+    ERR_NO_EDITOR="ERROR: Editor not found."
+    ERR_NOT_SUPPORTED="ERROR: A not supported program was called.\nDefault editor will be started now."
+    TITLE_SUPPORTED="SUPPORTED PROGRAMS:"
 fi
 
 
@@ -25,27 +44,34 @@ function hilfe_seite {
     echo "
  $PROGNAME ($VERSION)
 
- Öffnet eine Textdatei und springt darin unmittelbar zu der
- vom Anwender angegebenen Zeile. $PROGNAME ist ein
- Wrapper-Programm für eien Reihe von Texteditoren und
+ Öffnet eine Textdatei und springt darin unmittelbar zu
+ der vom Anwender angegebenen Zeile. $PROGNAME ist ein
+ Wrapper-Programm für eine Reihe von Texteditoren und
  Text-Viewern, es vereinheitlicht das Kommando um mit
  diesen Programmen eine Textdatei mit dem Sprung zu einer
  bestimmten Zeile zu öffnen.
 
- AUFRUF: $SCRIPTNAME <Editor> +<Zeilennummer> <Datei>
+ AUFRUFFORMEN
+   $SCRIPTNAME <Editor> +<Zeilennummer> <Datei>
+   $SCRIPTNAME --hilf
+   $SCRIPTNAME --supported
+   $SCRIPTNAME --aliase
 
  Die Option mit der anzuspringenden Zeilennumer kann auch
  als erster oder letzter der drei Paramter geschreiben
  werden:
 
-   $SCRIPTNAME +<line_number> <<editor> file>
+   $SCRIPTNAME +<line_number> <editor> file>
    $SCRIPTNAME <editor> <file> +<line_number>
+
+ OPTIONEN
+   --hilf        # Aufruf dieser Hilfeseite
+   --supported   # Listet die unterstützten Programme auf
+   --aliase      # Listet die aktuellen Programmaliase auf.
 
  Zurzeit unterstützte Editoren und Textviewer:
 
-   vim, nano, leafpad, pluma, sublime, jupp, joe,
-   jstar, jpico, jmacs, kate, scite, mcedit, xed,
-   cream, vis, ne; less, more, most
+$SUPPORTED
 
 "
 }
@@ -58,38 +84,46 @@ function help_page {
  works as wrapper for various text editors and unifies the
  command to open a text file at a specific line.
 
- SYNOPSIS: $SCRIPTNAME <editor> +<line_number> <file>
+ SYNOPSIS
+   $SCRIPTNAME <editor> +<line_number> <file>
+   $SCRIPTNAME --help|-h
+   $SCRIPTNAME --supported
+   $SCRIPTNAME --aliases
 
  The option for the line number can also be given as first
  or last parameter:
 
-   $SCRIPTNAME +<line_number> <<editor> file>
+   $SCRIPTNAME +<line_number> <editor> file>
    $SCRIPTNAME <editor> <file> +<line_number>
+
+ OPTIONS
+   --help        # Shows this help page.
+   --supported   # Lists the supported programs.
+   --aliases     # Lists the current program aliases.
 
  Currently supported editors and viewers:
 
-   vim, nano, leafpad, pluma, sublime, jupp, joe,
-   jstar, jpico, jmacs, kate, scite, mcedit, xed,
-   cream, vis, ne; less, more, most
+$SUPPORTED
 
 "
 }
 
+## Reading command line parameters:
 editor=; file=; start=
 for i in $@; do
     if [ "${i:0:1}" != '+' ]; then
-        if [ "$#" -gt 2 ]; then
-			[ -z "$editor" ] && editor="$i" && continue
+        if [ "$#" -gt 2 ]; then  ## Maybe $editor will later be set automatically.
+            [ -z "$editor" ] && editor="$i" && continue
         fi
-		[ -z "$file" ]   && file="$i"   && continue
+        [ -z "$file" ]   && file="$i"   && continue
     else
         start="${i:1}"
     fi
 done
 
 function set_edit_command {
-	case "$1" in
-        jupp|joe|vi|vim|cream|vis|pluma|mcedit|nano|less|more|most|xed|ne|jstar|jpico|jmacs)
+    case "$1" in
+        jupp|joe|vi|vim|cream|vis|gvim|pluma|gedit|mcedit|emacs|nano|pico|less|more|most|jed|xed|ne|kak|kakoune|geany|jstar|jpico|jmacs)
             edit_command="+$start $file";;
         leafpad)
             edit_command="--jump=$start $file";;
@@ -97,7 +131,7 @@ function set_edit_command {
             edit_command="$file -goto:$start";;
         sublime|sublime-edit)
             edit_command="${file}:${start}";;
-        kate)
+        kate|kwrite|medit)
             edit_command="--line $start $file";;
         medit)
             edit_command="--line=$start $file";;
@@ -109,18 +143,26 @@ function select_editor { # Selects the editor program to use.
     if [ -n "$1" ]; then
         editor="$1"
     fi
+    if [ -n "${prog_alias[$editor]}" ]; then
+        editor="${prog_alias[$editor]}"  ## Translates aliases to the correct program name.
+    fi
+    if ! grep -Fw "$editor" <<< "$SUPPORTED" &> /dev/null; then
+        editor=
+        echo -e "$ERR_NOT_SUPPORTED" > /dev/stderr
+        sleep 4
+    fi
     if [ ! "$(which "$editor")" ]; then
         if [ -n "$EDITOR" ] && [ "$(which "$EDITOR")" ]; then
-            editor="$(basename $EDITOR)"
-        else
-            for i in jupp joe vi vis cream pluma mcedit nano ne xed less more most; do
+            editor="$(basename "$EDITOR")"
+        else  ## Automatically selects the editor or viewer:
+            for i in jupp joe vi vis cream gvim pluma mcedit nano pico ne xed gedit emacs geany less more most; do
                 if [ "$(which ${i})" ]; then
                     editor="$i"
                      break
                 fi
             done
             if [ -n "$editor" ]; then
-                echo "FEHLER: Texteditor nicht gefunden."
+                echo "$ERR_NO_EDITOR." > /dev/stderr
                 exit 1
             fi
         fi
@@ -140,6 +182,28 @@ case "$1" in
             hilfe_seite
         else
             help_page
+        fi
+        exit 0
+        ;;
+    --supported)
+        echo -e "\n $TITLE_SUPPORTED"
+        echo -e "$SUPPORTED\n"
+        exit 0
+        ;;
+    --aliases|--aliase)
+        if which column &> /dev/null; then
+			echo
+			( echo -e "\nALIAS\tPROG\n----------\t----------------\n"
+			for idx in "${!prog_alias[@]}"; do
+				echo -e "$idx \t${prog_alias[$idx]}"
+			done) | column -c 40 -t
+			echo
+        else
+			echo -e "\nALIAS\t\tPROG\n"
+			for idx in "${!prog_alias[@]}"; do
+				echo -e "$idx\t\t${prog_alias[$idx]}"
+			done
+			echo
         fi
         exit 0
         ;;

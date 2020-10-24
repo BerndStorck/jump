@@ -12,11 +12,11 @@
 # Data for program self description:
 PROGNAME="jump"
 SCRIPTNAME="${0##*/}"
-VERSION="1.2.0"
-SUPPORTED="    cream, emacs, geany, gedit, gvim, jed, jmacs, joe, jpico
-    jstar, jupp, kak (kakoune), kate, kwrite, leafpad, less
-    less, mcedit, medit, more, most, nano, ne, nvim, pico, pluma,
-    scite, sublime, vim, vis, xed"
+VERSION="1.2.1"
+SUPPORTED="   cream, emacs, geany, gedit, gvim, jed, jmacs, joe, jpico
+   jstar, jupp, kak (kakoune), kate, kwrite, leafpad, less
+   less, mcedit, medit, more, most, nano, ne, nvim, pico,
+   pluma, scite, sublime, vim, vis, xed"
 
 ## Define aliases array:
 declare -A prog_alias
@@ -56,9 +56,10 @@ function hilfe_seite {
    $SCRIPTNAME --hilf
    $SCRIPTNAME --supported
    $SCRIPTNAME --aliase
+   $SCRIPTNAME --version
 
  Die Option mit der anzuspringenden Zeilennumer kann auch
- als erster oder letzter der drei Paramter geschreiben
+ als erster oder letzter der drei Paramter geschrieben
  werden:
 
    $SCRIPTNAME +<line_number> <editor> file>
@@ -68,12 +69,13 @@ function hilfe_seite {
    --hilf        # Aufruf dieser Hilfeseite
    --supported   # Listet die unterstützten Programme auf
    --aliase      # Listet die aktuellen Programmaliase auf.
+   --version     # Zeigt die Programmversion an.
 
  Zurzeit unterstützte Editoren und Textviewer:
 
 $SUPPORTED
 
-"
+" | more
 }
 
 function help_page {
@@ -89,6 +91,7 @@ function help_page {
    $SCRIPTNAME --help|-h
    $SCRIPTNAME --supported
    $SCRIPTNAME --aliases
+   $SCRIPTNAME --version
 
  The option for the line number can also be given as first
  or last parameter:
@@ -100,12 +103,13 @@ function help_page {
    --help        # Shows this help page.
    --supported   # Lists the supported programs.
    --aliases     # Lists the current program aliases.
+   --version     # Quotes the program version.
 
  Currently supported editors and viewers:
 
 $SUPPORTED
 
-"
+" | more
 }
 
 ## Reading command line parameters:

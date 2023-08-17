@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# jump, 2020-10-23, 2020-10-24
+# jump, 2020-10-23, 2020-10-24, 2023-08-17
 #
 # Opens a text file with a given text editor or viewer and jumps right
 # to a specific line.
@@ -12,7 +12,7 @@
 # Data for program self description:
 PROGNAME="jump"
 SCRIPTNAME="${0##*/}"
-VERSION="1.2.3"
+VERSION="1.2.4"
 SUPPORTED="   cream, emacs, geany, gedit, gvim, jed, jmacs, joe, jpico
    jstar, jupp, kak (kakoune), kate, kwrite, leafpad,
    less, mcedit, medit, more, most, nano, ne, nvim, pico,
@@ -21,13 +21,13 @@ SUPPORTED="   cream, emacs, geany, gedit, gvim, jed, jmacs, joe, jpico
 # Different strings for German system language and otherwise used English:
 if [ "${LANG::2}" == "de" ]; then  # sets a flag variable for the user interface language.
     UILANG="Deutsch"
-    ERR_NO_EDITOR="FEHLER: Texteditor nicht gefunden."
-    ERR_NOT_SUPPORTED="FEHLER: Ein nicht unterstütztes Programm wurde aufgerufen.\nDer Standardeditor wird jetzt stattdessen gestartet."
+    ERR_NO_EDITOR="[jump] FEHLER: Texteditor nicht gefunden."
+    ERR_NOT_SUPPORTED="[jump] FEHLER: Ein nicht unterstütztes Programm wurde aufgerufen.\nDer Standardeditor wird jetzt stattdessen gestartet."
     TITLE_SUPPORTED="UNTERSTÜTZTE PROGRAMME:"
 else
     UILANG="English"
-    ERR_NO_EDITOR="ERROR: Editor not found."
-    ERR_NOT_SUPPORTED="ERROR: A not supported program was called.\nDefault editor will be started now."
+    ERR_NO_EDITOR="[jump] ERROR: Editor not found."
+    ERR_NOT_SUPPORTED="[jump] ERROR: A not supported program was called.\nDefault editor will be started now."
     TITLE_SUPPORTED="SUPPORTED PROGRAMS:"
 fi
 
@@ -35,14 +35,14 @@ fi
 declare -A prog_alias
 OLDIFS="$IFS"
 IFS=','
-while read value idx; do
+while read -r value idx; do
 	prog_alias[$idx]="$value"
 done < "$HOME/.jump_aliases"
 IFS="$OLDIFS"
 
 ## Reading command line parameters:
 editor=; file=; start=
-for i in $@; do
+for i in "$@"; do
     if [ "${i:0:1}" != '+' ]; then
         if [ "$#" -gt 2 ]; then  ## Maybe $editor will later be set automatically.
             [ -z "$editor" ] && editor="$i" && continue
@@ -155,23 +155,23 @@ function select_editor { # Selects the editor program to use.
         # echo "Enters not supported"
         editor=
         echo -e "$ERR_NOT_SUPPORTED" > /dev/stderr
-        sleep 4
+        sleep 3
     fi
-    if [ ! "$(which "$editor")" ] && [ ! "$(command -v "$editor")" ]; then
+    if ! command -v "$editor" > /dev/null; then
         # echo "\$editor (=$editor) nicht gefunden"
-        if [ -n "$EDITOR" ] && [ "$(which "$EDITOR")" ]; then
-            # echo "EDITOR wird gelesen"
+        if [ -n "$EDITOR" ] && command -v "$EDITOR"; then
+            # echo "EDITOR wird gelesen: $EDITOR"
             editor="$(basename "$EDITOR")"
         else  ## Automatically selects the editor or viewer:
             # echo "Enters automatic editor selection"
             for i in jupp joe vi vis cream gvim pluma mcedit nano pico ne xed gedit emacs geany less more most; do
-                if [ "$(which ${i})" ]; then
+                if command -v "${i}" > /dev/null; then
                     editor="$i"
-                     break
+                    break
                 fi
             done
-            if [ -n "$editor" ]; then
-                echo "$ERR_NO_EDITOR." > /dev/stderr
+            if [ -z "$editor" ]; then
+                echo "$ERR_NO_EDITOR" > /dev/stderr
                 exit 1
             fi
         fi
@@ -200,7 +200,7 @@ case "$1" in
         exit 0
         ;;
     --aliases|--aliase)
-        if which column &> /dev/null; then
+        if command -v column &> /dev/null; then
 			echo
 			( echo -e "\nALIAS\tPROG\n----------\t----------------\n"
 			for idx in "${!prog_alias[@]}"; do
